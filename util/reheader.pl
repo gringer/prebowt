@@ -31,6 +31,7 @@ my @files = grep {-f}
   glob("$rootDir/src/*.cpp $rootDir/util/*.prl $rootDir/include/*.hpp");
 
 foreach my $fName (@files){
+  my $fMode = (stat($fName))[2];
   my $extension = ($fName =~ s/^.*\.//r);
   print("$fName $extension\n");
   copy("$fName", "$fName.old");
@@ -50,11 +51,15 @@ foreach my $fName (@files){
       while(<$licenseFile>){
         print($out "$_");
       }
+      close($licenseFile);
       print($out "\n$lcFooters{$extension}\n");
     } else {
       print($out "$_\n");
     }
   }
+  close($in);
+  close($out);
+  chmod($fMode, $fName);
 }
 
 =head1 LICENSE
