@@ -28,7 +28,7 @@ my %lcFooters = ( 'cpp' => '</header> **/',
                   'pl' => '=cut' );
 
 my @files = grep {-f}
-  glob("$rootDir/src/*.cpp $rootDir/util/*.prl $rootDir/include/*.hpp");
+  glob("$rootDir/src/*.cpp $rootDir/util/*.pl $rootDir/include/*.hpp");
 
 foreach my $fName (@files){
   my $fMode = (stat($fName))[2];
