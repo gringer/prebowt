@@ -1,25 +1,40 @@
 /** <header>
-
-Copyright 2014 David Eccles (gringer) <bioinformatics@gringene.org>
-
-This file is part of preBowt
-
-preBowt is free software: you can redistribute it and/or modify it
-under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-preBowt is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with preBowt. If not, see <http://www.gnu.org/licenses/>
-
+ *
+ * Copyright 2014 David Eccles (gringer) <bioinformatics@gringene.org>
+ *
+ * This file is part of preBowt
+ *
+ * preBowt is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * preBowt is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with preBowt. If not, see <http://www.gnu.org/licenses/>
+ *
 </header> **/
 
 #ifndef __ROPE_HPP__
 #define __ROPE_HPP__
+
+class Rope{
+public:
+  static const int SHORT_THRESHOLD = 20;
+  string sequence;
+  Rope* left = NULL;
+  Rope* right = NULL;
+  static concat(Rope rL, Rope rR);
+  Rope(string& tSeq);
+  Rope(Rope* rL, Rope* rR);
+  bool isShortLeaf();
+  bool hasChildren();
+  bool isConcatNode();
+  bool hasRight();
+};
 
 #endif //__ROPE_HPP_
