@@ -17,3 +17,6 @@
 
 # temporary / backup files
 *.old
+
+# build (CMake) directory
+build/

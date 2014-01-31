@@ -1,0 +1,3 @@
+// the configured options and settings for prebowt
+#define prebowt_VERSION_MAJOR @prebowt_VERSION_MAJOR@
+#define prebowt_VERSION_MINOR @prebowt_VERSION_MINOR@
