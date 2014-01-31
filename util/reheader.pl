@@ -27,6 +27,10 @@ my %lcPrefix = ( 'cpp' => ' * ',
                   'hpp' => ' * ',
                   'pl' => '' );
 
+my %lcEmPrefix = ( 'cpp' => ' *',
+                   'hpp' => ' *',
+                   'pl' => '' );
+
 my %lcFooters = ( 'cpp' => '</header> **/',
                   'hpp' => '</header> **/',
                   'pl' => '=cut' );
@@ -53,7 +57,11 @@ foreach my $fName (@files){
       open(my $licenseFile, "< $rootDir/doc/license-header.txt")
         or die ("Unable to open license file for reading");
       while(<$licenseFile>){
-        print($out "$lcPrefix{$extension}$_");
+        if(/^$/){
+          print($out "$lcEmPrefix{$extension}$_");
+        } else {
+          print($out "$lcPrefix{$extension}$_");
+        }
       }
       close($licenseFile);
       print($out "\n$lcFooters{$extension}\n");
