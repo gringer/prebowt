@@ -29,17 +29,20 @@ using namespace std;
 class Rope{
 public:
   static const int SHORT_THRESHOLD = 20;
-  string sequence;
-  Rope* left = NULL;
-  Rope* right = NULL;
   Rope(const Rope& src);
   Rope(Rope* rL, Rope* rR);
   Rope(const string& tSeq);
+  Rope& operator=(const Rope& src);
+  ~Rope();
   static Rope concat(Rope& rL, Rope& rR);
   const bool isShortLeaf();
   const bool hasChildren();
   const bool isConcatNode();
   const bool hasRight();
+private:
+  Rope* left = NULL;
+  Rope* right = NULL;
+  string sequence;
 };
 
 #endif //__ROPE_HPP_

@@ -34,9 +34,32 @@ using namespace std;
 // [note: left and right for src and this point to the same node]
 Rope::Rope(const Rope& src){
   sequence = src.sequence;
+  if(left != NULL){
+    delete(left);
+  }
+  if(right != NULL){
+    delete(right);
+  }
   left = src.left;
   right = src.right;
 }
+
+// Assignment operator (shallow copy)
+Rope& Rope::operator=(const Rope& src){
+  if(this != &src){ // gracefully handle self assignment
+    if(left != NULL){
+      delete(left);
+    }
+    if(right != NULL){
+      delete(right);
+    }
+    left = src.left;
+    right = src.right;
+  }
+  return *this;
+}
+
+
 
 // Create a new leaf node out of a string
 Rope::Rope(const string& tSeq){
@@ -86,13 +109,25 @@ const bool Rope::isConcatNode(){
   return(hasRight());
 }
 
-int main(){
-  cout << "It works!\n";
-}
-
 Rope::~Rope(){
   if(left != NULL){
+    delete(left);
   }
   if(right != NULL){
+    delete(right);
   }
+}
+
+int main(){
+  cout << "Testing leaf node creation...";
+  Rope a("The quick brown ");
+  Rope b("fox jumps over ");
+  Rope c("the lazy dog");
+  cout << " done\n";
+  cout << "Testing simple string concatenation...";
+  Rope d = Rope::concat(a,b);
+  cout << " done\n";
+  cout << "Testing standard concatenation containing long leaf strings...";
+  Rope e = Rope::concat(d,c);
+  cout << " done\n";
 }
