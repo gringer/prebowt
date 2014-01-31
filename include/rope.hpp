@@ -22,19 +22,24 @@
 #ifndef __ROPE_HPP__
 #define __ROPE_HPP__
 
+#include <string>
+
+using namespace std;
+
 class Rope{
 public:
   static const int SHORT_THRESHOLD = 20;
   string sequence;
   Rope* left = NULL;
   Rope* right = NULL;
-  static concat(Rope rL, Rope rR);
-  Rope(string& tSeq);
+  Rope(const Rope& src);
   Rope(Rope* rL, Rope* rR);
-  bool isShortLeaf();
-  bool hasChildren();
-  bool isConcatNode();
-  bool hasRight();
+  Rope(const string& tSeq);
+  static Rope concat(Rope& rL, Rope& rR);
+  const bool isShortLeaf();
+  const bool hasChildren();
+  const bool isConcatNode();
+  const bool hasRight();
 };
 
 #endif //__ROPE_HPP_
