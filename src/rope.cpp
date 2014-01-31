@@ -89,3 +89,10 @@ const bool Rope::isConcatNode(){
 int main(){
   cout << "It works!\n";
 }
+
+Rope::~Rope(){
+  if(left != NULL){
+  }
+  if(right != NULL){
+  }
+}
