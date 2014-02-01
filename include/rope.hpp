@@ -36,8 +36,8 @@ public:
   int nodeNum;
   // constructors
   Rope(const Rope& src);
-  Rope(const Rope& rL, const Rope& rR);
   Rope(const string& tSeq);
+  Rope(const Rope& rL, const Rope& rR);
   // overloaded operators
   Rope& operator=(const Rope& src);
   // destructor
@@ -45,17 +45,20 @@ public:
   // static public methods
   static Rope concat(const Rope& rL, const Rope& rR);
   static Rope substr(const Rope& src, size_t start, size_t len);
+  // public methods
+  size_t length() const;
 private:
   // fields
-  shared_ptr<Rope> left = NULL; // shared_ptr used to avoid excess copying
-  shared_ptr<Rope> right = NULL;
+  shared_ptr<Rope> left; // shared_ptr used to avoid excess copying
+  shared_ptr<Rope> right;
   string sequence;
   // accessory methods
   bool isLeaf() const;
   bool isShortLeaf() const;
   bool hasChildren() const;
-  bool isConcatNode() const;
+  bool hasLeft() const;
   bool hasRight() const;
+  bool isConcatNode() const;
 };
 
 #endif //__ROPE_HPP_
