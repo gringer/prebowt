@@ -44,9 +44,11 @@ public:
   ~Rope();
   // static public methods
   static Rope concat(const Rope& rL, const Rope& rR);
-  static Rope substr(const Rope& src, size_t start, size_t len);
+  static Rope substr(const Rope& src, const size_t& start, const size_t& len);
   // public methods
   size_t length() const;
+  Rope* getLeft() const;
+  Rope* getRight() const;
 private:
   // fields
   shared_ptr<Rope> left; // shared_ptr used to avoid excess copying

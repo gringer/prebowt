@@ -26,7 +26,8 @@
 #include "rope.hpp"
 #include "prebowtconfig.hpp"
 
-#define PTR_DEBUG 1
+//#define PTR_DEBUG 1
+//#define OUTPUT_DEBUG 1
 
 using namespace std;
 
@@ -36,9 +37,25 @@ using namespace std;
 int Rope::nextNodeNum = 0;
 
 ostream &operator<<(ostream& out, const Rope& src){
+#if OUTPUT_DEBUG
+  cerr << "{";
+#endif
+  if(src.left){
+    out << *src.left;
+  }
   if(src.isLeaf()){
     out << src.sequence;
+  } else {
+#if OUTPUT_DEBUG
+    cerr << ",";
+#endif
   }
+  if(src.right){
+    out << *src.right;
+  }
+#if OUTPUT_DEBUG
+    cerr << "}";
+#endif
   return out;
 }
 
@@ -118,14 +135,19 @@ Rope Rope::concat(const Rope& rL, const Rope& rR){
   return(Rope(rL, rR));
 }
 
-Rope Rope::substr(const Rope& src, size_t start, size_t len){
-  cerr << "[SS]";
+Rope Rope::substr(const Rope& src, const size_t& start, const size_t& len){
+#if SUBSTR_DEBUG
+  cerr << "[SS(" << start << "," << len << ")]";
+#endif
   if(src.isLeaf()){
     // The substring operation on structured ropes can be easily
     // implemented. We assume that the substring operation on leaves
     // simply copies the relevant section of the leaf, and deals with
     // negative start arguments and over-length arguments correctly.
-    cerr << "[Leaf substring]";
+#if SUBSTR_DEBUG
+    cerr << "[Leaf substring (" << start << ","
+         << len << ") of "<< src.length() << "]";
+#endif
     Rope retVal(src.sequence.substr(start, len));
     return(retVal);
   }
@@ -143,10 +165,11 @@ Rope Rope::substr(const Rope& src, size_t start, size_t len){
   //         else
   //            substr(rope2,start-length(rope1), len-length(left))
   Rope right(((start <= leftLength) 
-              && (start + len >= leftLength + src.right->length())) ?
+              && ((start + len) >= (leftLength + src.right->length()))) ?
              *src.right :
              Rope::substr(*src.right, 
-                          start - leftLength, len - left.length()));
+                          (leftLength >= start) ? 0 : start - leftLength,
+                          len - left.length()));
   return(Rope::concat(left,right));
 }
 
@@ -163,6 +186,16 @@ size_t Rope::length() const{
   }
   return tLen;
 }
+
+Rope* Rope::getLeft() const{
+  return left.get();
+}
+
+Rope* Rope::getRight() const{
+  return right.get();
+}
+
+// private accessory methods
 
 bool Rope::isLeaf() const{
   return((!left) && (!right));
@@ -195,22 +228,35 @@ int main(){
   Rope c("the lazy ");
   Rope d("dog");
   cerr << " done\n";
+  cerr << "Result[a]: " << a << endl;
+  cerr << "Result[b]: " << b << endl;
+  cerr << "Result[c]: " << c << endl;
+  cerr << "Result[d]: " << d << endl;
   cerr << "Testing substring on simple string... ";
   cerr << "'" << Rope::substr(a,4,5) << "' == 'quick'...";
   cerr << " done\n";
   cerr << "Testing concatenation of two short leaves...";
   Rope e = Rope::concat(a,b);
   cerr << " done\n";
+  cerr << "Result[e]: " << e << endl;
   cerr << "Testing basic node concatenation...";
   Rope f(a,b);
   cerr << " done\n";
+  cerr << "Result[f]: " << f << endl;
   cerr << "Testing substring with range [0,len(left)+1]...";
-  cerr << "'" << Rope::substr(f,0,17) << "' == 'The quick brown f'...";
+  cerr << "'" << Rope::substr(f,0,f.getLeft()->length()+1)
+       << "' == 'The quick brown f'...";
+  cerr << " done\n";
+  cerr << "Testing substring with range [4,len(left+right)+1]...";
+  cerr << "'" << Rope::substr(f,0,f.length())
+       << "' == 'quick brown fox jumps over '...";
   cerr << " done\n";
   cerr << "Testing concatenation with right of left node a short leaf...";
   Rope g = Rope::concat(f,c);
   cerr << " done\n";
+  cerr << "Result[g]: " << g << endl;
   cerr << "Testing non-trivial node concatenation...";
   Rope h = Rope::concat(g,d);
   cerr << " done\n";
+  cerr << "Result[h]: " << h << endl;
 }
