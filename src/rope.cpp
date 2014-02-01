@@ -67,12 +67,12 @@ Rope::Rope(const string& tSeq){
 }
 
 // Create a new concatenation node from two child ropes
-Rope::Rope(Rope* rL, Rope* rR){
-  left = rL;
-  right = rR;
+Rope::Rope(const Rope& rL, const Rope& rR){
+  left = new Rope(rL);
+  right = new Rope(rR);
 }
 
-Rope Rope::concat(Rope& rL, Rope& rR){
+Rope Rope::concat(const Rope& rL, const Rope& rR){
   if(rL.isShortLeaf() && rR.isShortLeaf()){
     // If both arguments are short leaves, we produce a flat rope
     // (leaf) consisting of the concatenation.
@@ -85,36 +85,38 @@ Rope Rope::concat(Rope& rL, Rope& rR){
     // we concatenate the two leaves, and then concatenate the result
     // to the left son of the left argument
     Rope rightVal(rL.right->sequence + rR.sequence);
-    Rope retVal(rL.left, &rightVal);
+    Rope retVal(*rL.left, rightVal);
     return(retVal);
   }
   // In the general case, concatenation involves simply allocating a
   // concatenation node containing two pointers to the two arguments.
-  return(Rope(&rL, &rR));
+  return(Rope(rL, rR));
 }
 
-const bool Rope::isShortLeaf(){
+bool Rope::isShortLeaf() const{
   return(!hasChildren() && (sequence.size() <= Rope::SHORT_THRESHOLD));
 }
 
-const bool Rope::hasChildren(){
+bool Rope::hasChildren() const{
   return((left != NULL) || (right != NULL));
 }
 
-const bool Rope::hasRight(){
+bool Rope::hasRight() const{
   return(right != NULL);
 }
 
-const bool Rope::isConcatNode(){
+bool Rope::isConcatNode() const{
   return(hasRight());
 }
 
 Rope::~Rope(){
   if(left != NULL){
     delete(left);
+    left = NULL;
   }
   if(right != NULL){
     delete(right);
+    right = NULL;
   }
 }
 
@@ -122,12 +124,19 @@ int main(){
   cout << "Testing leaf node creation...";
   Rope a("The quick brown ");
   Rope b("fox jumps over ");
-  Rope c("the lazy dog");
+  Rope c("the lazy ");
+  Rope d("dog");
   cout << " done\n";
-  cout << "Testing simple string concatenation...";
-  Rope d = Rope::concat(a,b);
+  cout << "Testing concatenation of two short leaves...";
+  Rope e = Rope::concat(a,b);
   cout << " done\n";
-  cout << "Testing standard concatenation containing long leaf strings...";
-  Rope e = Rope::concat(d,c);
+  cout << "Testing basic node concatenation...";
+  Rope f(a,b);
+  cout << " done\n";
+  cout << "Testing concatenation with right of left node a short leaf...";
+  Rope g = Rope::concat(f,c);
+  cout << " done\n";
+  cout << "Testing non-trivial node concatenation...";
+  Rope h = Rope::concat(g,d);
   cout << " done\n";
 }

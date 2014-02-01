@@ -30,15 +30,15 @@ class Rope{
 public:
   static const int SHORT_THRESHOLD = 20;
   Rope(const Rope& src);
-  Rope(Rope* rL, Rope* rR);
+  Rope(const Rope& rL, const Rope& rR);
   Rope(const string& tSeq);
   Rope& operator=(const Rope& src);
   ~Rope();
-  static Rope concat(Rope& rL, Rope& rR);
-  const bool isShortLeaf();
-  const bool hasChildren();
-  const bool isConcatNode();
-  const bool hasRight();
+  static Rope concat(const Rope& rL, const Rope& rR);
+  bool isShortLeaf() const;
+  bool hasChildren() const;
+  bool isConcatNode() const;
+  bool hasRight() const;
 private:
   Rope* left = NULL;
   Rope* right = NULL;
