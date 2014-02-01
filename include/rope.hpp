@@ -61,6 +61,7 @@ private:
   bool hasLeft() const;
   bool hasRight() const;
   bool isConcatNode() const;
+  size_t depth() const;
 };
 
 #endif //__ROPE_HPP_

@@ -22,6 +22,7 @@
 #include <string>
 #include <iostream>
 #include <memory>
+#include <algorithm>
 
 #include "rope.hpp"
 #include "prebowtconfig.hpp"
@@ -219,6 +220,13 @@ bool Rope::hasRight() const{
 
 bool Rope::isConcatNode() const{
   return(hasRight());
+}
+
+size_t Rope::depth() const{
+  // We define the depth of a leaf to be 0, and the depth of a
+  // concatenation to be one plus the maximum depth of its children.
+  return((isLeaf()) ? 0 :
+    (max(left.get()->depth(),right.get()->depth())+1));
 }
 
 int main(){
