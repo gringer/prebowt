@@ -23,26 +23,39 @@
 #define __ROPE_HPP__
 
 #include <string>
+#include <memory>
 
 using namespace std;
 
 class Rope{
+  friend ostream& operator<<(ostream& out, const Rope& src);
 public:
+  // fields
   static const int SHORT_THRESHOLD = 20;
+  static int nextNodeNum;
+  int nodeNum;
+  // constructors
   Rope(const Rope& src);
   Rope(const Rope& rL, const Rope& rR);
   Rope(const string& tSeq);
+  // overloaded operators
   Rope& operator=(const Rope& src);
+  // destructor
   ~Rope();
+  // static public methods
   static Rope concat(const Rope& rL, const Rope& rR);
+  static Rope substr(const Rope& src, size_t start, size_t len);
+private:
+  // fields
+  shared_ptr<Rope> left = NULL; // shared_ptr used to avoid excess copying
+  shared_ptr<Rope> right = NULL;
+  string sequence;
+  // accessory methods
+  bool isLeaf() const;
   bool isShortLeaf() const;
   bool hasChildren() const;
   bool isConcatNode() const;
   bool hasRight() const;
-private:
-  Rope* left = NULL;
-  Rope* right = NULL;
-  string sequence;
 };
 
 #endif //__ROPE_HPP_

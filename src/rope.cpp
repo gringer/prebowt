@@ -21,6 +21,7 @@
 
 #include <string>
 #include <iostream>
+#include <memory>
 
 #include "rope.hpp"
 #include "prebowtconfig.hpp"
@@ -30,16 +31,16 @@ using namespace std;
 // non-destructive algorithms are based on Boehm, Atkinson and Plass (1995)
 // http://citeseer.ist.psu.edu/viewdoc/download?doi=10.1.1.14.9450&rep=rep1&type=pdf
 
+int Rope::nextNodeNum = 0;
+
 // Copy constructor (shallow copy)
 // [note: left and right for src and this point to the same node]
 Rope::Rope(const Rope& src){
+  nodeNum = nextNodeNum++;
+#if PTR_DEBUG
+  cerr << "[C#" << nodeNum << "<-#" << src.nodeNum << "]";
+#endif
   sequence = src.sequence;
-  if(left != NULL){
-    delete(left);
-  }
-  if(right != NULL){
-    delete(right);
-  }
   left = src.left;
   right = src.right;
 }
@@ -47,29 +48,43 @@ Rope::Rope(const Rope& src){
 // Assignment operator (shallow copy)
 Rope& Rope::operator=(const Rope& src){
   if(this != &src){ // gracefully handle self assignment
-    if(left != NULL){
-      delete(left);
-    }
-    if(right != NULL){
-      delete(right);
-    }
+    nodeNum = nextNodeNum++;
+#if PTR_DEBUG
+    cerr << "[A#" << nodeNum << "<-#" << src.nodeNum << "]";
+#endif
     left = src.left;
     right = src.right;
   }
   return *this;
 }
 
-
+ostream &operator<<(ostream& out, const Rope& src){
+  if(src.isLeaf()){
+    out << src.sequence;
+  }
+  return out;
+}
 
 // Create a new leaf node out of a string
 Rope::Rope(const string& tSeq){
+  nodeNum = nextNodeNum++;
+#if PTR_DEBUG
+  cerr << "[L#" << nodeNum << "(" << tSeq << ")]";
+#endif
   sequence = tSeq;
 }
 
 // Create a new concatenation node from two child ropes
 Rope::Rope(const Rope& rL, const Rope& rR){
-  left = new Rope(rL);
-  right = new Rope(rR);
+  nodeNum = nextNodeNum++;
+#if PTR_DEBUG
+  cerr << "[T#" << nodeNum << "<-(" 
+       << rL.nodeNum << "," << rR.nodeNum << ")]";
+#endif
+  shared_ptr<Rope> pRL(new Rope(rL));
+  shared_ptr<Rope> pRR(new Rope(rR));
+  left = pRL;
+  right = pRR;
 }
 
 Rope Rope::concat(const Rope& rL, const Rope& rR){
@@ -93,6 +108,23 @@ Rope Rope::concat(const Rope& rL, const Rope& rR){
   return(Rope(rL, rR));
 }
 
+Rope Rope::substr(const Rope& src, size_t start, size_t len){
+  if(src.isLeaf()){
+    // The substring operation on structured ropes can be easily
+    // implemented. We assume that the substring operation on leaves
+    // simply copies the relevant section of the leaf, and deals with
+    // negative start arguments and over-length arguments correctly.
+    Rope retVal(src.sequence.substr(start, len));
+    return(retVal);
+  }
+  Rope retVal("Dummy return value");
+  return(retVal);
+}
+
+bool Rope::isLeaf() const{
+  return(!hasChildren());
+}
+
 bool Rope::isShortLeaf() const{
   return(!hasChildren() && (sequence.size() <= Rope::SHORT_THRESHOLD));
 }
@@ -110,14 +142,9 @@ bool Rope::isConcatNode() const{
 }
 
 Rope::~Rope(){
-  if(left != NULL){
-    delete(left);
-    left = NULL;
-  }
-  if(right != NULL){
-    delete(right);
-    right = NULL;
-  }
+#if PTR_DEBUG
+  cerr << "[~#" << nodeNum << "]\n";
+#endif
 }
 
 int main(){
@@ -126,6 +153,9 @@ int main(){
   Rope b("fox jumps over ");
   Rope c("the lazy ");
   Rope d("dog");
+  cout << " done\n";
+  cout << "Testing substring on simple string... ";
+  cout << "'" << Rope::substr(a,4,5) << "' == 'quick'...";
   cout << " done\n";
   cout << "Testing concatenation of two short leaves...";
   Rope e = Rope::concat(a,b);
