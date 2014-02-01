@@ -10,6 +10,20 @@ stores the *suffixes* of sequence substrings in a compressed, sorted
 form. The transform will be stored as a rope structure, which enables
 fast dynamic insertion of new sequences.
 
+Each base-pair uses 8 bits. The bases (and ambiguity) use the 4
+highest bits (A=4,C=5,G=6,T=7), and quality scores use the remaining 4
+lowest bits. Quality scores are encoded by dividing by 4 with integer
+rounding, with upper limit of Q=60 (i.e. 15*4):
+
+```
+base:W (A/T), quality:53 (13 * 4 r 1)
+----
+7 6 5 4   3 2 1 0
+1 0 0 1   1 1 0 1
+| | | |   | | | |
+T G C A   8 4 2 1 
+```
+
 To increase search speed for large structures, the transform is
 supplemented by a delta index, which stores the counts of bases
 (i.e. A/C/G/T in the sequence) relative to the expected count at that
