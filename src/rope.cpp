@@ -35,6 +35,18 @@ using namespace std;
 // non-destructive algorithms are based on Boehm, Atkinson and Plass (1995)
 // http://citeseer.ist.psu.edu/viewdoc/download?doi=10.1.1.14.9450&rep=rep1&type=pdf
 
+// On balancing trees, see here:
+// http://pages.cs.wisc.edu/~ealexand/cs367/NOTES/AVL-Trees/index.html
+// [because the explanation in the paper is not so great]
+
+// Or... I could try red/black tree balancing
+
+// but see https://en.wikipedia.org/wiki/Red-black_tree
+// "However for storing large volumes, B-trees will be much faster as
+// they will be more compact by grouping several children in the same
+// cluster where they can be accessed locally."
+
+
 int Rope::nextNodeNum = 0;
 
 ostream &operator<<(ostream& out, const Rope& src){
