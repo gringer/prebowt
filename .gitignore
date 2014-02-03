@@ -20,3 +20,6 @@
 
 # build (CMake) directory
 build/
+
+# research papers / compiled documentation
+*.pdf
