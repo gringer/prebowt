@@ -2,6 +2,9 @@
 cmake_minimum_required (VERSION 2.8.12.1)
 project (prebowt)
 
+# change to Clang
+set (CMAKE_CXX_COMPILER "/usr/bin/clang++")
+
 # The version number.
 set (prebowt_VERSION_MAJOR 1)
 set (prebowt_VERSION_MINOR 0)
@@ -25,4 +28,4 @@ include_directories("${PROJECT_BINARY_DIR}/include")
 include_directories("${PROJECT_SOURCE_DIR}/include")
 
 # add the project executable
-add_executable(prebowt src/rope.cpp)
+add_executable(prebowt src/dtree.cpp)
