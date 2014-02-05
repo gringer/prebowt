@@ -7,8 +7,20 @@ capability to store quality scores. The transform stores all the
 *prefixes* of any substring of the sequence in a compressed, sorted
 form. This is similar to the Burrows-Wheeler Transform (BWT), which
 stores the *suffixes* of sequence substrings in a compressed, sorted
-form. The transform will be stored as a rope structure, which enables
-fast dynamic insertion of new sequences.
+form. The transform will be stored in a delta-based variation of a
+B-Tree (hereafter called a D-Tree), which enables fast dynamic
+insertion of new sequences.
+
+To increase search speed for large structures, the transform is
+supplemented by a delta index (as part of the D-Tree) which stores the
+counts of bases (i.e. A/C/G/T in the sequence) relative to the count
+at the previous record within the node. This is the primary difference
+between B-Trees and D-Trees. It has a similar structure to the
+FM-index that is frequently coupled with the BWT structure,
+essentially using buckets but excluding the need for super-buckets
+that store explicit counts. To save a few bits, ambiguous counts and
+end markers (N/$) are stored separately and do not adjust the counts
+for the specified bases.
 
 Each base-pair uses 8 bits. The bases (and ambiguity) use the 4
 highest bits (A=4,C=5,G=6,T=7), and quality scores use the remaining 4
@@ -23,17 +35,6 @@ base:W (A/T), quality:53 (13 * 4 r 1)
 | | | |   | | | |
 T G C A   8 4 2 1 
 ```
-
-To increase search speed for large structures, the transform is
-supplemented by a delta index, which stores the counts of bases
-(i.e. A/C/G/T in the sequence) relative to the expected count at that
-location based on an assumption that base frequencies are equal (this
-will have poor performance for non-random sequences). This has a
-similar structure to the FM-index that is frequently coupled with the
-BWT structure, essentially using buckets but excluding the need for
-super-buckets that store explicit counts. To save a few bits,
-ambiguous counts and end markers (N/$) are stored separately and do
-not adjust the counts for the specified bases.
 
 The transform stores an encoded, sorted form of sequence prefixes and
 can support multiple sequences by sorting identical sequences based on
