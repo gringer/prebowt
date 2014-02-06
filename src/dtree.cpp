@@ -22,6 +22,35 @@
 #include "dtree.hpp"
 #include <iostream>
 
+ostream& operator<<(ostream& out, const DTree& src){
+  for(size_t i = 0; i < src.length; i++){
+    out << src.sequences[i];
+  }
+  return out;
+}
+
+DTree::DTree(const string& src){
+  deltas[0] = 0;
+  sequences[0] = src;
+  length = 1;
+}
+
+DTree DTree::substr(const size_t& start, const size_t& len){
+  return *this;
+}
+
+void DTree::append(const string& src){
+  if(length < SEQ_MAX){
+    deltas[length] = sequences[length-1].length();
+    // TODO: should account for right children
+    sequences[length] = src;
+    length++;
+  }
+}
+
+void DTree::insert( const size_t& pos, const string src){
+}
+
 int main(){
   string sA("The quick brown ");
   string sB("fox jumps over ");

@@ -23,6 +23,7 @@
 #define __ROPE_HPP__
 
 #include <string>
+#include <memory>
 
 using namespace std;
 
@@ -38,14 +39,15 @@ public:
   };
   // fields
   uint64_t deltas[SEQ_MAX];
-  DTree* nodes[PTR_MAX];
+  shared_ptr<DTree> nodes[PTR_MAX];
   string sequences[SEQ_MAX];
+  size_t length;
   // constructors
-  DTree(const string src);
+  DTree(const string& src);
   // public methods
   DTree substr(const size_t& start, const size_t& len);
-  DTree append(const string src);
-  DTree insert( const size_t& pos, const string src);
+  void append(const string& src);
+  void insert(const size_t& pos, const string src);
 };
 
 #endif //__ROPE_HPP_
