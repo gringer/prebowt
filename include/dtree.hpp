@@ -38,16 +38,19 @@ public:
     PTR_MAX = 5
   };
   // fields
-  uint64_t deltas[SEQ_MAX];
+  uint64_t deltas[PTR_MAX];
   shared_ptr<DTree> nodes[PTR_MAX];
   string sequences[SEQ_MAX];
   size_t length;
+  size_t depth;
   // constructors
   DTree(const string& src);
   // public methods
-  DTree substr(const size_t& start, const size_t& len);
+  DTree substr(const uint64_t& start, const uint64_t& len);
   void append(const string& src);
-  void insert(const size_t& pos, const string src);
+  void insert(const uint64_t& pos, const string src);
+private:
+  static size_t leafDepth;
 };
 
 #endif //__ROPE_HPP_

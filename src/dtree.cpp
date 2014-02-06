@@ -19,12 +19,22 @@
  *
 </header> **/
 
-#include "dtree.hpp"
 #include <iostream>
 
+#include "dtree.hpp"
+#include "prebowtconfig.hpp"
+
+size_t DTree::leafDepth = 0;
+
 ostream& operator<<(ostream& out, const DTree& src){
+  if(src.nodes[0]){
+    out << *(src.nodes[0]);
+  }
   for(size_t i = 0; i < src.length; i++){
     out << src.sequences[i];
+    if(src.nodes[i+1]){
+      out << *(src.nodes[i+1]);
+    }
   }
   return out;
 }
@@ -32,23 +42,45 @@ ostream& operator<<(ostream& out, const DTree& src){
 DTree::DTree(const string& src){
   deltas[0] = 0;
   sequences[0] = src;
+  deltas[1] = src.length();
   length = 1;
 }
 
-DTree DTree::substr(const size_t& start, const size_t& len){
+DTree DTree::substr(const uint64_t& start, const uint64_t& len){
+  if(depth == leafDepth){ // a leaf node (no children)
+    size_t startSeq = 0;
+    size_t endSeq = 0;
+    uint64_t end = start + len;
+    uint64_t pos = deltas[0];
+    uint64_t posStart = 0;
+    for(size_t i = 1; i <= length; i++){
+      pos += deltas[i];
+      if(start >= pos){
+        posStart = pos;
+        startSeq = i;
+      }
+      if(end > pos){
+        endSeq = i;
+      }
+    }
+    if(startSeq == endSeq){
+      string sub = sequences[posStart].substr(start - posStart, len);
+      DTree ret(sub);
+      return(ret);
+    }
+  }
   return *this;
 }
 
 void DTree::append(const string& src){
   if(length < SEQ_MAX){
-    deltas[length] = sequences[length-1].length();
     // TODO: should account for right children
     sequences[length] = src;
-    length++;
+    deltas[++length] = src.length();
   }
 }
 
-void DTree::insert( const size_t& pos, const string src){
+void DTree::insert( const uint64_t& pos, const string src){
 }
 
 int main(){
