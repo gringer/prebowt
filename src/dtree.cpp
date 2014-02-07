@@ -130,7 +130,16 @@ DTree DTree::substr(const uint64_t& start, const uint64_t& len) const{
 // retVal.left: this[0,pos)
 // retVal.right: this[pos,this->length())
 DSplit DTree::split(const uint64_t& splitPos) const{
-  // TODO: deal with pre-child (if necessary)
+  if(splitPos < deltas[0]){
+    // split point is inside the first child
+    DSplit preSplit = nodes[0]->split(splitPos);
+    DSplit retVal;
+    retVal.right = *this;
+    shared_ptr<DTree> preRight(&preSplit.right);
+    retVal.right.nodes[0] = preRight;
+    retVal.left = preSplit.left;
+    return retVal;
+  }
   size_t splitNode = 0;
   uint64_t splitStart = 0;
   uint64_t startPosSplit = 0;
@@ -238,7 +247,7 @@ int main(){
   cout << "[3] Testing partial substring on single node... ";
   cout << "'" << dA.substr(4,5) << "' == 'quick'...";
   cout << " done\n";
-  cout << "[4] Testing append of string...";
+  cout << "[4] Testing append of DTree A and DTree B...";
   DTree dE = dA.append(sB);
   cout << " done\n";
   cout << "    Result[dE]: " << dE << endl;
