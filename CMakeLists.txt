@@ -9,6 +9,9 @@ set (CMAKE_CXX_COMPILER "/usr/bin/clang++")
 set (prebowt_VERSION_MAJOR 1)
 set (prebowt_VERSION_MINOR 0)
 
+# add debugging symbols
+set(CMAKE_BUILD_TYPE debug)
+
 #Sends the -std=c++11 flag to the gcc compiler
 add_definitions(-std=c++11)
 

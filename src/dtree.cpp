@@ -63,11 +63,11 @@ ostream& operator<<(ostream& out, const DTree& src){
 
 // constructors
 
-DTree::DTree(){ // tested by [1]
+DTree::DTree(){
   initialise();
 }
 
-DTree::DTree(const string& src){ // tested by [1]
+DTree::DTree(const string& src){
   initialise();
   inplaceAppend(src);
 #if MEMORY_DEBUG
@@ -83,7 +83,7 @@ DTree::DTree(const DTree& src){
 }
 
 // Assignment operator (shallow copy)
-DTree& DTree::operator=(const DTree& src){ // tested by [2]
+DTree& DTree::operator=(const DTree& src){
   if(this != &src){ // gracefully handle self assignment
     initialise();
     depth = src.depth;
@@ -95,34 +95,9 @@ DTree& DTree::operator=(const DTree& src){ // tested by [2]
 // public methods
 
 DTree DTree::substr(const uint64_t& start, const uint64_t& len) const{
-  size_t startNode = 0;
-  size_t endNode = 0;
   uint64_t end = start + len;
-  uint64_t posStart = 0;
-  uint64_t posEnd = 0;
-  uint64_t pos = deltas[0] + deltas[1];
-  for(size_t i = 1; (i < nodeCount) && (end > pos); i++){
-    if(start > pos){
-      startNode++;
-      posStart = pos;
-    }
-    endNode++;
-    posEnd = pos;
-    pos+= deltas[i+1];
-  }
-  DTree retVal;
-  // TODO: non-leaf substring
-  // TODO: exclude pre-child (if necessary)
-  if(startNode == endNode){ // tested by [4]
-    string sub = sequences[startNode].substr(start - posStart, len);
-    retVal.inplaceAppend(sub);
-  } else { // tested by [5,6]
-    string subStart = sequences[startNode].substr(start - posStart);
-    string subEnd = sequences[endNode].substr(0,end - posEnd);
-    retVal.inplaceAppend(subStart);
-    retVal.inplaceAppend(*this, startNode+1, endNode);
-    retVal.inplaceAppend(subEnd);
-  }
+  DSplit startSplit = split(start);
+  DTree retVal = split(start).right.split(len).left;
   return(retVal);
 }
 
@@ -150,7 +125,8 @@ DSplit DTree::split(const uint64_t& splitPos) const{
     pos+= deltas[i+1];
   }
   DSplit retVal;
-  string preSplit = sequences[splitNode].substr(0,splitPos - startPosSplit);
+  string preSplit = (splitPos == 0) ? 
+    "" : sequences[splitNode].substr(0,splitPos - startPosSplit);
   string postSplit = sequences[splitNode].substr(splitPos - startPosSplit);
   retVal.left.inplaceAppend(*this,0,splitNode);
   retVal.left.inplaceAppend(preSplit);
@@ -159,7 +135,7 @@ DSplit DTree::split(const uint64_t& splitPos) const{
   return retVal;
 }
 
-DTree DTree::append(const DTree& src) const{ // tested by [4]
+DTree DTree::append(const DTree& src) const{
   DTree retVal = *this;
   if((nodeCount + src.nodeCount) <= SEQ_MAX){
     retVal.deltas[retVal.nodeCount] += src.deltas[0];
@@ -175,15 +151,8 @@ DTree DTree::append(const DTree& src) const{ // tested by [4]
 }
 
 DTree DTree::insert( const uint64_t& pos, const DTree& src) const{
-  DTree start = substr(0, pos);
-  DTree end = substr(pos, src.length());
-  DTree s1 = start.append(src);
-  DTree s2 = s1.append(end);
-  cerr << "Insert:" << endl;
-  cerr << start << endl;
-  cerr << s1 << endl;
-  cerr << s2 << endl;
-  return start.append(src).append(end);
+  DSplit insertSplit = split(pos);
+  return insertSplit.left.append(src).append(insertSplit.right);
 }
 
 uint64_t DTree::length() const{
@@ -202,12 +171,21 @@ void DTree::initialise(){
 
 // append nodes and sequences in-place from another DTree
 void DTree::inplaceAppend(const DTree& src, size_t fromNode, size_t toNode){
-  if(fromNode >= toNode){
+  if((fromNode >= toNode) || (fromNode >= src.nodeCount)){
     return;
   }
+  //cerr << "Appending to: " << *this << endl;
   deltas[nodeCount] += src.deltas[fromNode];
-  // TODO: this will clobber pre-existing nodes
-  nodes[nodeCount] = src.nodes[fromNode];
+  if(fromNode > 0){
+    deltas[nodeCount] -= src.sequences[fromNode-1].length();
+  }
+  // Append to pre-existing node if it exists
+  if(nodes[nodeCount]){
+    DTree toAppend = *src.nodes[fromNode];
+    nodes[nodeCount]->inplaceAppend(toAppend);
+  } else {
+    nodes[nodeCount] = src.nodes[fromNode];
+  }
   for(int i = fromNode; (i < toNode) && (i < src.nodeCount); i++){
     sequences[nodeCount] = src.sequences[i];
     deltas[nodeCount+1] = src.deltas[i+1];
@@ -215,6 +193,7 @@ void DTree::inplaceAppend(const DTree& src, size_t fromNode, size_t toNode){
     nodeCount++;
     seqLength += src.deltas[i+1];
   }
+  //cerr << "Result: " << *this << endl;
 }
 
 // append sequence in-place
@@ -227,11 +206,12 @@ void DTree::inplaceAppend(const string& src){
 // test function
 
 int main(){
+  size_t nextTestID = 0;
   string sA("The quick brown ");
   string sB("fox jumps over ");
   string sC("the lazy ");
   string sD("dog");
-  cout << "[1] Testing tree creation... ";
+  cout << "[" << ++nextTestID << "] Testing tree creation... ";
   DTree dA(sA);
   DTree dB = sB;
   DTree dC(sC);
@@ -241,32 +221,50 @@ int main(){
   cout << "    Result[dB]: " << dB << endl;
   cout << "    Result[dC]: " << dC << endl;
   cout << "    Result[dD]: " << dD << endl;
-  cout << "[2] Testing complete substring on single node using length()... ";
-  cout << "'" << dA.substr(0,dA.length()) << "' == 'The quick brown '...";
-  cout << " done\n";
-  cout << "[3] Testing partial substring on single node... ";
-  cout << "'" << dA.substr(4,5) << "' == 'quick'...";
-  cout << " done\n";
-  cout << "[4] Testing append of DTree A and DTree B...";
-  DTree dE = dA.append(sB);
+  cout << "[" << ++nextTestID << "] Testing append of DTree A and DTree B...";
+  DTree dE = dA.append(dB);
   cout << " done\n";
   cout << "    Result[dE]: " << dE << endl;
-  cout << "[5] Testing substring with range [0,len(left)+1]...";
-  cout << "'" << dE.substr(0,sA.length()+1)
-       << "' == 'The quick brown f'...";
+  cout << "[" << ++nextTestID << "] Testing append of DTree E and DTree C...";
+  DTree dF = dE.append(dC);
   cout << " done\n";
-  cout << "[6] Testing substring with range [4,len(left+right)]...";
-  cout << "'" << dE.substr(4,sA.length()+sB.length() - 4)
-       << "' == 'quick brown fox jumps over '...";
-  cout << " done\n";
-  cout << "[7] Testing insertion...";
-  DTree dF = dA.append(dC).insert(dA.length(), dB);
-  cout << " done\n";
-  cout << "Result[dF]: " << dF << endl;
-  cout << "[8] Testing split...";
+  cout << "    Result[dF]: " << dF << endl;
+  cout << "[" << ++nextTestID << "] Testing split in middle...";
   DSplit sG = dA.split(10);
   cout << " done\n";
   cout << "    Result[sG.left]: " << sG.left << endl;
   cout << "    Result[sG.right]: " << sG.right << endl;
-  cout << "    Result[appended]: " << sG.left.append(sG.right) << endl;
+  cout << "[" << ++nextTestID << "] Testing split at left...";
+  DSplit sH = dA.split(0);
+  cout << " done\n";
+  cout << "    Result[sH.left]: " << sH.left << endl;
+  cout << "    Result[sH.right]: " << sH.right << endl;
+  cout << "[" << ++nextTestID << "] Testing split at right...";
+  DSplit sI = dA.split(dA.length());
+  cout << " done\n";
+  cout << "    Result[sI.left]: " << sI.left << endl;
+  cout << "    Result[sI.right]: " << sI.right << endl;
+  cout << "[" << ++nextTestID 
+       << "] Testing complete substring on single node using length()... ";
+  cout << "'" << dA.substr(0,dA.length()) << "' == 'The quick brown '...";
+  cout << " done\n";
+  cout << "[" << ++nextTestID 
+       << "] Testing partial substring on single node... ";
+  cout << "'" << dA.substr(4,5) << "' == 'quick'...";
+  cout << " done\n";
+  cout << "[" << ++nextTestID 
+       << "] Testing substring with range [0,len(left)+1]...";
+  cout << "'" << dE.substr(0,sA.length()+1)
+       << "' == 'The quick brown f'...";
+  cout << " done\n";
+  cout << "[" << ++nextTestID 
+       << "] Testing substring with range [4,len(left+right)]...";
+  cout << "'" << dE.substr(4,sA.length()+sB.length() - 4)
+       << "' == 'quick brown fox jumps over '...";
+  cout << " done\n";
+  cout << "[" << ++nextTestID 
+       << "] Testing insertion...";
+  DTree dJ = dA.append(dC).insert(dA.length(), dB);
+  cout << " done\n";
+  cout << "     Result[dJ]: " << dJ << endl;
 }
