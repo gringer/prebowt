@@ -28,6 +28,8 @@
 
 using namespace std;
 
+class DSplit;
+
 class DTree{
   friend ostream& operator<<(ostream& out, const DTree& src);
 public:
@@ -39,12 +41,14 @@ public:
     PTR_MAX = 5
   };
   // constructors
+  DTree(); // create empty tree
   DTree(const string& src); // create initial tree from string
   DTree(const DTree& src); // copy constructor
   // operators
   DTree& operator=(const DTree& src); // assignment operator
   // public methods
   DTree substr(const uint64_t& start, const uint64_t& len) const;
+  DSplit split(const uint64_t& splitPos) const;
   DTree append(const DTree& src) const;
   DTree insert(const uint64_t& pos, const DTree& src) const;
   uint64_t length() const;
@@ -66,6 +70,12 @@ private:
   void inplaceAppend(const DTree& src, size_t fromNode = 0,
                      size_t toNode = numeric_limits<size_t>::max());
   void inplaceAppend(const string& src);
+};
+
+class DSplit{
+public:
+  DTree left;
+  DTree right;
 };
 
 #endif //__DTREE_HPP_

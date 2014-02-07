@@ -62,11 +62,13 @@ ostream& operator<<(ostream& out, const DTree& src){
 
 // constructors
 
+DTree::DTree(){ // tested by [1]
+  initialise();
+}
+
 DTree::DTree(const string& src){ // tested by [1]
   initialise();
-  sequences[nodeCount++] = src;
-  deltas[nodeCount] = src.length();
-  seqLength += src.length();
+  inplaceAppend(src);
 #if MEMORY_DEBUG
   cerr << "%% " << *this << endl;
 #endif
@@ -98,7 +100,7 @@ DTree DTree::substr(const uint64_t& start, const uint64_t& len) const{
   uint64_t posStart = 0;
   uint64_t posEnd = 0;
   uint64_t pos = deltas[0] + deltas[1];
-  for(size_t i = 1; (i < nodeCount) && (end >= pos); i++){
+  for(size_t i = 1; (i < nodeCount) && (end > pos); i++){
     if(start > pos){
       startNode++;
       posStart = pos;
@@ -107,20 +109,44 @@ DTree DTree::substr(const uint64_t& start, const uint64_t& len) const{
     posEnd = pos;
     pos+= deltas[i+1];
   }
+  DTree retVal;
   // TODO: non-leaf substring
   // TODO: exclude pre-child (if necessary)
   if(startNode == endNode){ // tested by [4]
     string sub = sequences[startNode].substr(start - posStart, len);
-    DTree retVal(sub);
-    return(retVal);
+    retVal.inplaceAppend(sub);
   } else { // tested by [5,6]
     string subStart = sequences[startNode].substr(start - posStart);
     string subEnd = sequences[endNode].substr(0,end - posEnd);
-    DTree retVal(subStart);
+    retVal.inplaceAppend(subStart);
     retVal.inplaceAppend(*this, startNode+1, endNode);
     retVal.inplaceAppend(subEnd);
-    return(retVal);
   }
+  return(retVal);
+}
+
+// splits a tree into two component DTrees at location pos
+// retVal.left: this[0,pos)
+// retVal.right: this[pos,this->length())
+DSplit DTree::split(const uint64_t& splitPos) const{
+  // TODO: deal with pre-child (if necessary)
+  size_t splitNode = 0;
+  uint64_t splitStart = 0;
+  uint64_t startPosSplit = 0;
+  uint64_t pos = deltas[0] + deltas[1];
+  for(size_t i = 1; (i < nodeCount) && (splitPos > pos); i++){
+    splitNode++;
+    startPosSplit = pos;
+    pos+= deltas[i+1];
+  }
+  DSplit retVal;
+  string preSplit = sequences[splitNode].substr(0,splitPos - startPosSplit);
+  string postSplit = sequences[splitNode].substr(splitPos - startPosSplit);
+  retVal.left.inplaceAppend(*this,0,splitNode);
+  retVal.left.inplaceAppend(preSplit);
+  retVal.right.inplaceAppend(postSplit);
+  retVal.right.inplaceAppend(*this,splitNode+1);
+  return retVal;
 }
 
 DTree DTree::append(const DTree& src) const{ // tested by [4]
@@ -139,7 +165,15 @@ DTree DTree::append(const DTree& src) const{ // tested by [4]
 }
 
 DTree DTree::insert( const uint64_t& pos, const DTree& src) const{
-  return *this;
+  DTree start = substr(0, pos);
+  DTree end = substr(pos, src.length());
+  DTree s1 = start.append(src);
+  DTree s2 = s1.append(end);
+  cerr << "Insert:" << endl;
+  cerr << start << endl;
+  cerr << s1 << endl;
+  cerr << s2 << endl;
+  return start.append(src).append(end);
 }
 
 uint64_t DTree::length() const{
@@ -219,4 +253,10 @@ int main(){
   DTree dF = dA.append(dC).insert(dA.length(), dB);
   cout << " done\n";
   cout << "Result[dF]: " << dF << endl;
+  cout << "[8] Testing split...";
+  DSplit sG = dA.split(10);
+  cout << " done\n";
+  cout << "    Result[sG.left]: " << sG.left << endl;
+  cout << "    Result[sG.right]: " << sG.right << endl;
+  cout << "    Result[appended]: " << sG.left.append(sG.right) << endl;
 }
