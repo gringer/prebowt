@@ -35,62 +35,52 @@ my %lcFooters = ( 'cpp' => '</header> **/',
                   'hpp' => '</header> **/',
                   'pl' => '=cut' );
 
-my @files = grep {-f}
-  glob("$rootDir/src/*.cpp $rootDir/util/*.pl $rootDir/include/*.hpp");
-
-foreach my $fName (@files){
-  my $fMode = (stat($fName))[2];
+while(<>){
+  my $fName = $ARGV;
   my $extension = ($fName =~ s/^.*\.//r);
-  print("$fName $extension\n");
-  copy("$fName", "$fName.old");
-  open(my $in, "< $fName.old")
-    or die ("Unable to open $fName.old for reading");
-  open(my $out, "> $fName")
-    or die ("Unable to open $fName for writing");
-  while(<$in>){
-    chomp;
-    if($_ eq $lcHeaders{$extension}){
-      print("Found header\n");
-      print($out "$lcHeaders{$extension}\n\n");
-      for($_ = <$in>, chomp;
-          $_ ne $lcFooters{$extension}; $_ = <$in>, chomp){}
-      open(my $licenseFile, "< $rootDir/doc/license-header.txt")
-        or die ("Unable to open license file for reading");
-      while(<$licenseFile>){
-        if(/^$/){
-          print($out "$lcEmPrefix{$extension}$_");
-        } else {
-          print($out "$lcPrefix{$extension}$_");
-        }
-      }
-      close($licenseFile);
-      print($out "\n$lcFooters{$extension}\n");
-    } else {
-      print($out "$_\n");
-    }
+  if(!exists($lcHeaders{$extension})){
+    die("File extension '$extension' cannot be handled by this utility!\n");
   }
-  close($in);
-  close($out);
-  chmod($fMode, $fName);
+  chomp;
+  if($_ eq $lcHeaders{$extension}){
+    print(STDERR "Found header\n");
+    print("$lcHeaders{$extension}\n\n");
+    for($_ = <>, chomp;
+        $_ ne $lcFooters{$extension}; $_ = <>, chomp){}
+    open(my $licenseFile, "< $rootDir/doc/license-header.txt")
+      or die ("Unable to open license file for reading");
+    while(<$licenseFile>){
+      if(/^$/){
+        print("$lcEmPrefix{$extension}$_");
+      } else {
+        print("$lcPrefix{$extension}$_");
+      }
+    }
+    close($licenseFile);
+    print("\n$lcFooters{$extension}\n");
+  } else {
+    print("$_\n");
+  }
 }
 
 =head1 LICENSE
 
+This file is part of preBowt -- a prefix-based BWT-like transform of
+genetic data.
+
 Copyright 2014 David Eccles (gringer) <bioinformatics@gringene.org>
 
-This file is part of preBowt
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or (at
+your option) any later version.
 
-preBowt is free software: you can redistribute it and/or modify it
-under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-preBowt is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with preBowt. If not, see <http://www.gnu.org/licenses/>
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 =cut
