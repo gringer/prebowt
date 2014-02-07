@@ -19,11 +19,12 @@
  *
 </header> **/
 
-#ifndef __ROPE_HPP__
-#define __ROPE_HPP__
+#ifndef __DTREE_HPP__
+#define __DTREE_HPP__
 
 #include <string>
 #include <memory>
+#include <limits>
 
 using namespace std;
 
@@ -37,20 +38,34 @@ public:
     SEQ_MAX = 4,
     PTR_MAX = 5
   };
-  // fields
+  // constructors
+  DTree(const string& src); // create initial tree from string
+  DTree(const DTree& src); // copy constructor
+  // operators
+  DTree& operator=(const DTree& src); // assignment operator
+  // public methods
+  DTree substr(const uint64_t& start, const uint64_t& len) const;
+  DTree append(const DTree& src) const;
+  DTree insert(const uint64_t& pos, const DTree& src) const;
+  uint64_t length() const;
+protected:
+private:
+  // shared fields
+  static size_t leafDepth;
+  static size_t nextNodeNum;
+  // personal fields
   uint64_t deltas[PTR_MAX];
   shared_ptr<DTree> nodes[PTR_MAX];
   string sequences[SEQ_MAX];
-  size_t length;
+  size_t nodeCount;
   size_t depth;
-  // constructors
-  DTree(const string& src);
-  // public methods
-  DTree substr(const uint64_t& start, const uint64_t& len);
-  void append(const string& src);
-  void insert(const uint64_t& pos, const string src);
-private:
-  static size_t leafDepth;
+  size_t nodeNum;
+  uint64_t seqLength;
+  // accessory methods
+  void initialise();
+  void inplaceAppend(const DTree& src, size_t fromNode = 0,
+                     size_t toNode = numeric_limits<size_t>::max());
+  void inplaceAppend(const string& src);
 };
 
-#endif //__ROPE_HPP_
+#endif //__DTREE_HPP_

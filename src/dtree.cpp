@@ -25,95 +25,198 @@
 #include "prebowtconfig.hpp"
 
 size_t DTree::leafDepth = 0;
+size_t DTree::nextNodeNum = 0;
+
+#define NODE_DEBUG 1
+//#define MEMORY_DEBUG 1
 
 ostream& operator<<(ostream& out, const DTree& src){
+#if NODE_DEBUG
+  out << "{";
+#if MEMORY_DEBUG
+  out << "#" << src.nodeNum;
+#endif
+#endif
   if(src.nodes[0]){
     out << *(src.nodes[0]);
   }
-  for(size_t i = 0; i < src.length; i++){
+  for(size_t i = 0; i < src.nodeCount; i++){
+#if NODE_DEBUG
+    out << "<" << src.deltas[i] << ">";
+    out << "[";
+#endif
     out << src.sequences[i];
+#if NODE_DEBUG
+    out << "]";
+#endif
     if(src.nodes[i+1]){
       out << *(src.nodes[i+1]);
     }
   }
+#if NODE_DEBUG
+  out << "<" << src.deltas[src.nodeCount] << ">";
+  out << "}";
+#endif
   return out;
 }
 
-DTree::DTree(const string& src){
-  deltas[0] = 0;
-  sequences[0] = src;
-  deltas[1] = src.length();
-  length = 1;
+// constructors
+
+DTree::DTree(const string& src){ // tested by [1]
+  initialise();
+  sequences[nodeCount++] = src;
+  deltas[nodeCount] = src.length();
+  seqLength += src.length();
+#if MEMORY_DEBUG
+  cerr << "%% " << *this << endl;
+#endif
 }
 
-DTree DTree::substr(const uint64_t& start, const uint64_t& len){
-  if(depth == leafDepth){ // a leaf node (no children)
-    size_t startSeq = 0;
-    size_t endSeq = 0;
-    uint64_t end = start + len;
-    uint64_t pos = deltas[0];
-    uint64_t posStart = 0;
-    for(size_t i = 1; i <= length; i++){
-      pos += deltas[i];
-      if(start >= pos){
-        posStart = pos;
-        startSeq = i;
-      }
-      if(end > pos){
-        endSeq = i;
-      }
-    }
-    if(startSeq == endSeq){
-      string sub = sequences[posStart].substr(start - posStart, len);
-      DTree ret(sub);
-      return(ret);
-    }
+// Copy constructor (shallow copy)
+DTree::DTree(const DTree& src){
+  initialise();
+  depth = src.depth;
+  inplaceAppend(src);
+}
+
+// Assignment operator (shallow copy)
+DTree& DTree::operator=(const DTree& src){ // tested by [2]
+  if(this != &src){ // gracefully handle self assignment
+    initialise();
+    depth = src.depth;
+    inplaceAppend(src);
   }
   return *this;
 }
 
-void DTree::append(const string& src){
-  if(length < SEQ_MAX){
-    // TODO: should account for right children
-    sequences[length] = src;
-    deltas[++length] = src.length();
+// public methods
+
+DTree DTree::substr(const uint64_t& start, const uint64_t& len) const{
+  size_t startNode = 0;
+  size_t endNode = 0;
+  uint64_t end = start + len;
+  uint64_t posStart = 0;
+  uint64_t posEnd = 0;
+  uint64_t pos = deltas[0] + deltas[1];
+  for(size_t i = 1; (i < nodeCount) && (end >= pos); i++){
+    if(start > pos){
+      startNode++;
+      posStart = pos;
+    }
+    endNode++;
+    posEnd = pos;
+    pos+= deltas[i+1];
+  }
+  // TODO: non-leaf substring
+  // TODO: exclude pre-child (if necessary)
+  if(startNode == endNode){ // tested by [4]
+    string sub = sequences[startNode].substr(start - posStart, len);
+    DTree retVal(sub);
+    return(retVal);
+  } else { // tested by [5,6]
+    string subStart = sequences[startNode].substr(start - posStart);
+    string subEnd = sequences[endNode].substr(0,end - posEnd);
+    DTree retVal(subStart);
+    retVal.inplaceAppend(*this, startNode+1, endNode);
+    retVal.inplaceAppend(subEnd);
+    return(retVal);
   }
 }
 
-void DTree::insert( const uint64_t& pos, const string src){
+DTree DTree::append(const DTree& src) const{ // tested by [4]
+  DTree retVal = *this;
+  if((nodeCount + src.nodeCount) <= SEQ_MAX){
+    retVal.deltas[retVal.nodeCount] += src.deltas[0];
+    for(int i = 0; i < src.nodeCount; i++){
+      // TODO: need to check right node here to prevent overwrite
+      retVal.nodes[retVal.nodeCount] = src.nodes[i];
+      retVal.sequences[retVal.nodeCount] = src.sequences[i];
+      retVal.deltas[++retVal.nodeCount] = src.deltas[i+1];
+    }
+  }
+  retVal.seqLength += src.seqLength;
+  return retVal;
 }
+
+DTree DTree::insert( const uint64_t& pos, const DTree& src) const{
+  return *this;
+}
+
+uint64_t DTree::length() const{
+  return seqLength;
+}
+
+// private accessory methods
+
+void DTree::initialise(){
+  nodeCount = 0;
+  depth = 0;
+  nodeNum = DTree::nextNodeNum++;
+  seqLength = 0;
+  deltas[0] = 0;
+}
+
+// append nodes and sequences in-place from another DTree
+void DTree::inplaceAppend(const DTree& src, size_t fromNode, size_t toNode){
+  if(fromNode >= toNode){
+    return;
+  }
+  deltas[nodeCount] += src.deltas[fromNode];
+  // TODO: this will clobber pre-existing nodes
+  nodes[nodeCount] = src.nodes[fromNode];
+  for(int i = fromNode; (i < toNode) && (i < src.nodeCount); i++){
+    sequences[nodeCount] = src.sequences[i];
+    deltas[nodeCount+1] = src.deltas[i+1];
+    nodes[nodeCount+1] = src.nodes[i+1];
+    nodeCount++;
+    seqLength += src.deltas[i+1];
+  }
+}
+
+// append sequence in-place
+void DTree::inplaceAppend(const string& src){
+  sequences[nodeCount] = src;
+  deltas[++nodeCount] = src.length();
+  seqLength += src.length();
+}
+
+// test function
 
 int main(){
   string sA("The quick brown ");
   string sB("fox jumps over ");
   string sC("the lazy ");
   string sD("dog");
-  cerr << "Testing tree creation... ";
+  cout << "[1] Testing tree creation... ";
   DTree dA(sA);
   DTree dB = sB;
-  cerr << " done\n";
-  cerr << "Result[dA]: " << dA << endl;
-  cerr << "Result[dB]: " << dB << endl;
-  cerr << "Testing substring on simple string... ";
-  cerr << "'" << dA.substr(4,5) << "' == 'quick'...";
-  cerr << " done\n";
-  cerr << "Testing append of string...";
-  DTree dC = sA;
-  dC.append(sB);
-  cerr << " done\n";
-  cerr << "Result[dC]: " << dC << endl;
-  cerr << "Testing substring with range [0,len(left)+1]...";
-  cerr << "'" << dC.substr(0,sA.length()+1)
+  DTree dC(sC);
+  DTree dD = sD;
+  cout << " done\n";
+  cout << "    Result[dA]: " << dA << endl;
+  cout << "    Result[dB]: " << dB << endl;
+  cout << "    Result[dC]: " << dC << endl;
+  cout << "    Result[dD]: " << dD << endl;
+  cout << "[2] Testing complete substring on single node using length()... ";
+  cout << "'" << dA.substr(0,dA.length()) << "' == 'The quick brown '...";
+  cout << " done\n";
+  cout << "[3] Testing partial substring on single node... ";
+  cout << "'" << dA.substr(4,5) << "' == 'quick'...";
+  cout << " done\n";
+  cout << "[4] Testing append of string...";
+  DTree dE = dA.append(sB);
+  cout << " done\n";
+  cout << "    Result[dE]: " << dE << endl;
+  cout << "[5] Testing substring with range [0,len(left)+1]...";
+  cout << "'" << dE.substr(0,sA.length()+1)
        << "' == 'The quick brown f'...";
-  cerr << " done\n";
-  cerr << "Testing substring with range [4,len(left+right)]...";
-  cerr << "'" << dC.substr(4,sA.length()+sB.length())
+  cout << " done\n";
+  cout << "[6] Testing substring with range [4,len(left+right)]...";
+  cout << "'" << dE.substr(4,sA.length()+sB.length() - 4)
        << "' == 'quick brown fox jumps over '...";
-  cerr << " done\n";
-  cerr << "Testing insertion...";
-  DTree dD = sA;
-  dD.append(sC);
-  dD.insert(sA.length(),sB);
-  cerr << " done\n";
-  cerr << "Result[dD]: " << dD << endl;
+  cout << " done\n";
+  cout << "[7] Testing insertion...";
+  DTree dF = dA.append(dC).insert(dA.length(), dB);
+  cout << " done\n";
+  cout << "Result[dF]: " << dF << endl;
 }
